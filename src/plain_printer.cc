@@ -118,6 +118,9 @@ std::vector<std::string> champsim::plain_printer::format(CACHE::stats_type stats
 
     lines.push_back(fmt::format("cpu{}->{} PREFETCH REQUESTED: {:10} ISSUED: {:10} USEFUL: {:10} USELESS: {:10}", cpu, stats.name, stats.pf_requested,
                                 stats.pf_issued, stats.pf_useful, stats.pf_useless));
+    lines.push_back(fmt::format("cpu{}->{} DEAD BLOCKS: {:10} VALID EVICTIONS: {:10} DEAD BLOCK %: {}",
+                            cpu, stats.name, stats.dead_block_count, stats.total_valid_evictions,
+                            ::print_ratio(100.0 * stats.dead_block_count, stats.total_valid_evictions)));
 
     uint64_t total_downstream_demands = total_mshr_return - stats.mshr_return.value_or(std::pair{access_type::PREFETCH, cpu}, mshr_return_value_type{});
     lines.push_back(
