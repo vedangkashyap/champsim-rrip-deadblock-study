@@ -888,6 +888,8 @@ void CACHE::end_phase(unsigned finished_cpu)
   roi_stats.pf_useful = sim_stats.pf_useful;
   roi_stats.pf_useless = sim_stats.pf_useless;
   roi_stats.pf_fill = sim_stats.pf_fill;
+  roi_stats.dead_block_count = sim_stats.dead_block_count;
+  roi_stats.total_valid_evictions = sim_stats.total_valid_evictions;
 
   for (auto* ul : upper_levels) {
     ul->roi_stats.RQ_ACCESS = ul->sim_stats.RQ_ACCESS;
