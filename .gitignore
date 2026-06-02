@@ -30,3 +30,10 @@ compile_commands.json
 
 .vscode/
 **/.DS_Store
+# Trace files should stay local
+traces/
+*.trace
+*.trace.gz
+*.trace.xz
+*.xz
+*.gz
