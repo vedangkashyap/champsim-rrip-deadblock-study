@@ -9,7 +9,12 @@ cache_stats operator-(cache_stats lhs, cache_stats rhs)
   result.pf_useless = lhs.pf_useless - rhs.pf_useless;
   result.pf_fill = lhs.pf_fill - rhs.pf_fill;
 
+
   result.hits = lhs.hits - rhs.hits;
+
+  result.dead_block_count = lhs.dead_block_count - rhs.dead_block_count;
+  result.total_valid_evictions = lhs.total_valid_evictions - rhs.total_valid_evictions;
+
   result.misses = lhs.misses - rhs.misses;
 
   result.total_miss_latency_cycles = lhs.total_miss_latency_cycles - rhs.total_miss_latency_cycles;
