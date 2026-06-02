@@ -25,7 +25,7 @@ struct cache_block {
   bool valid = false;
   bool prefetch = false;
   bool dirty = false;
-
+  bool used_after_fill = false;
   champsim::address address{};
   champsim::address v_address{};
   champsim::address data{};
