@@ -148,7 +148,8 @@ auto CACHE::fill_block(mshr_type mshr, uint32_t metadata) -> BLOCK
   to_fill.v_address = mshr.v_address;
   to_fill.data = mshr.data_promise->data;
   to_fill.pf_metadata = metadata;
-
+  to_fill.used_after_fill = false;
+  
   return to_fill;
 }
 
@@ -223,15 +224,23 @@ bool CACHE::handle_fill(const mshr_type& fill_mshr)
                               fill_mshr.type);
 
   if (way != set_end) {
-    if (way->valid && way->prefetch) {
-      ++sim_stats.pf_useless;
-    }
+  if (way->valid) {
+    ++sim_stats.total_valid_evictions;
 
-    if (fill_mshr.type == access_type::PREFETCH) {
-      ++sim_stats.pf_fill;
+    if (!way->used_after_fill) {
+      ++sim_stats.dead_block_count;
     }
+  }
 
-    *way = fill_block(fill_mshr, metadata_thru);
+  if (way->valid && way->prefetch) {
+    ++sim_stats.pf_useless;
+  }
+
+  if (fill_mshr.type == access_type::PREFETCH) {
+    ++sim_stats.pf_fill;
+  }
+
+  *way = fill_block(fill_mshr, metadata_thru);
   }
 
   // COLLECT STATS
@@ -274,6 +283,8 @@ bool CACHE::try_hit(const tag_lookup_type& handle_pkt)
                                 hit);
 
   if (hit) {
+    way->used_after_fill = true;
+
     sim_stats.hits.increment(std::pair{handle_pkt.type, handle_pkt.cpu});
 
     response_type response{handle_pkt.address, handle_pkt.v_address, way->data, metadata_thru, handle_pkt.instr_depend_on_me};
