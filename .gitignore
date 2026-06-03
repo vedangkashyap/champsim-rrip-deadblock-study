@@ -39,3 +39,4 @@ traces/
 *.gz
 # Local run logs
 *.log
+traces_crc2/
