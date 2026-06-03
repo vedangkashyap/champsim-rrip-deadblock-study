@@ -1,14 +1,247 @@
 # ChampSim Setup and Build Notes
 
+## Purpose
+
+This file documents the setup and build process used for this ChampSim project. It also records the build issues encountered on WSL/Ubuntu and the commands used to fix them.
+
+The goal of this file is to make the build process repeatable later without depending on memory or chat history.
+
 ## Repository Setup
 
-The official ChampSim repository is kept as `upstream`.
+The local repository uses two remotes:
 
-My own GitHub repository is kept as `origin`.
+```text
+origin   -> personal GitHub repository
+upstream -> official ChampSim repository
+```
 
-## Build Fix: CLI11 Link Flag
+`origin` is used for pushing my project work.
+`upstream` is kept as the original ChampSim source.
 
-On this WSL setup, the build failed at the final linking stage with:
+To check remotes:
+
+```bash
+git remote -v
+```
+
+Shows which online repositories the local project is connected to.
+
+## Working Branch
+
+The project work is done on:
+
+```text
+rrip-deadblock-study
+```
+
+This branch contains the documentation, build fixes, dead block counter implementation, and experiment setup.
+
+## Basic ChampSim Build Flow
+
+ChampSim must be configured before it is built.
+
+```bash
+./config.sh champsim_config.json
+```
+
+Generates ChampSim build files using the selected configuration file.
+
+```bash
+make -j1
+```
+
+Builds ChampSim using one thread. This is slower than a parallel build, but it makes compiler errors easier to read in order.
+
+## Cleaning Generated Build Files
+
+When switching between configuration files, the generated build directory should be removed first.
+
+```bash
+rm -rf .csconfig
+```
+
+Removes ChampSim’s generated configuration/build folder so the next build starts from a clean generated state.
+
+This is useful when switching from one config to another, such as from LRU to SRRIP.
+
+## Dependencies Installed
+
+The following packages were needed on WSL/Ubuntu for this setup:
+
+```bash
+sudo apt update
+```
+
+Updates the local package list before installing dependencies.
+
+```bash
+sudo apt install -y build-essential g++ cmake pkg-config
+```
+
+Installs common C/C++ build tools needed for compiling ChampSim.
+
+```bash
+sudo apt install -y libfmt-dev nlohmann-json3-dev libcli11-dev
+```
+
+Installs libraries used by ChampSim for formatting, JSON support, and command-line argument parsing.
+
+```bash
+sudo apt install -y zlib1g-dev libbz2-dev liblzma-dev
+```
+
+Installs compression libraries needed by the trace reader for compressed trace files.
+
+## Build Issue 1: Broken `absolute.options`
+
+During the build, the following errors appeared:
+
+```text
+cc1plus: error: to generate dependencies you must specify either '-M' or '-MM'
+fatal error: module_decl.inc: No such file or directory
+```
+
+The problem was caused by a broken trailing `-isystem` in `absolute.options`.
+
+Broken form:
+
+```text
+-I/home/vedang_k/ChampSim/inc -isystem
+```
+
+Fixed form:
+
+```text
+-I/home/vedang_k/ChampSim/inc
+```
+
+Fix command:
+
+```bash
+sed -i 's/ -isystem//g' absolute.options
+```
+
+Removes the incorrect trailing `-isystem` from `absolute.options`.
+
+## Build Issue 2: Missing Header Dependencies
+
+Several missing header errors appeared during setup.
+
+### Missing `fmt`
+
+```text
+fatal error: fmt/core.h: No such file or directory
+```
+
+Fixed by installing:
+
+```bash
+sudo apt install -y libfmt-dev
+```
+
+Installs the C++ `fmt` formatting library.
+
+### Missing JSON library
+
+```text
+fatal error: nlohmann/json.hpp: No such file or directory
+```
+
+Fixed by installing:
+
+```bash
+sudo apt install -y nlohmann-json3-dev
+```
+
+Installs the Nlohmann JSON header library.
+
+### Missing CLI11 header
+
+```text
+fatal error: CLI/CLI.hpp: No such file or directory
+```
+
+Fixed by installing:
+
+```bash
+sudo apt install -y libcli11-dev
+```
+
+Installs the CLI11 command-line parser headers.
+
+### Missing bzip2 header
+
+```text
+fatal error: bzlib.h: No such file or directory
+```
+
+Fixed by installing:
+
+```bash
+sudo apt install -y libbz2-dev
+```
+
+Installs bzip2 development headers used by the trace reader.
+
+## Build Issue 3: CLI11 Link Flag
+
+After the headers were installed, the final link step failed with:
 
 ```text
 /usr/bin/ld: cannot find -lCLI11
+```
+
+In this setup, CLI11 was available as a header-only dependency, but no separate `libCLI11` library was present for linking.
+
+The Makefile originally contained:
+
+```make
+override LDLIBS += -lCLI11 -llzma -lz -lbz2 -lfmt
+```
+
+It was changed to:
+
+```make
+override LDLIBS += -llzma -lz -lbz2 -lfmt
+```
+
+Fix command:
+
+```bash
+sed -i 's/-lCLI11 //g' Makefile
+```
+
+Removes the unnecessary `-lCLI11` linker flag from the Makefile.
+
+## Successful Build Check
+
+After the build fixes, the binary was generated successfully.
+
+```bash
+ls -lh bin/champsim
+```
+
+Checks whether the ChampSim binary exists.
+
+Successful result:
+
+```text
+bin/champsim
+```
+
+## Notes
+
+The following files and folders are generated or local-only and should not be committed:
+
+```text
+.csconfig/
+bin/
+*.o
+*.d
+*.log
+traces/
+```
+
+`.csconfig/` and `bin/` are generated by the build process.
+Trace files and raw logs are kept locally because they can be large.
+
