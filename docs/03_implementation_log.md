@@ -244,7 +244,16 @@ The build produced a warning in `src/plain_printer.cc` about converting `uint64_
 
 ## Validation Status
 
-The dead block counter was validated using the `450.soplex-92B.champsimtrace.xz` trace.
+The dead block counter was first validated using the `450.soplex-92B.champsimtrace.xz` trace.
 
-The output successfully showed dead block statistics for multiple structures, including L2C, L1D, DTLB, STLB, and LLC.
+The output successfully showed dead block statistics for multiple structures, including:
 
+- STLB
+- L2C
+- L1D
+- DTLB
+- LLC
+
+The implementation was later tested with separate LRU, SRRIP, and DRRIP binaries. These policy runs confirmed that the counter works across replacement policies without adding dead block logic inside individual replacement policy files.
+
+Additional experiments were performed using the CRC-2 `bzip2_259B.trace.xz` trace. Short 1M runs produced zero LLC valid evictions, so longer 50M and 100M simulation runs were used to obtain meaningful LLC replacement behavior.

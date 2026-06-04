@@ -78,5 +78,8 @@ Extracts only the dead block statistic lines from a full simulation output log.
 
 ## Current Status
 
-The dead block counter has been implemented and validated using the `450.soplex` trace. The current experiment stage is comparing LRU and SRRIP using the same trace and simulation length.
+The dead block counter has been implemented and validated using the `450.soplex` trace. This trace was useful for quick validation because it produced LLC valid evictions even with a short simulation run.
 
+The project was then extended to compare LRU, SRRIP, and DRRIP using separate ChampSim binaries. Later experiments also used the CRC-2 `bzip2_259B.trace.xz` trace with longer simulation lengths.
+
+The strongest current result is from the CRC-2 `bzip2_259B` trace using 10M warmup and 100M simulation instructions. In that run, SRRIP and DRRIP selected dead LLC victims much more effectively than LRU, and both improved IPC compared with LRU.

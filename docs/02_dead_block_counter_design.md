@@ -114,6 +114,11 @@ The dead block percentage is:
 
 ```text
 dead_block_percentage = dead_block_count / total_valid_evictions * 100
+
+The percentage is meaningful only when `total_valid_evictions > 0`.
+
+If no valid blocks were evicted, the output should use `-` instead of a percentage. In that case, the result does not mean there were no dead blocks in the cache. It only means no valid block reached eviction during the measured region.
+
 ```
 
 ## Output Format
