@@ -1,4 +1,4 @@
-# CRC-2 bzip2 100M Comparison: LRU vs SRRIP vs DRRIP
+# CRC-2 bzip2 100M Comparison: LRU vs SRRIP vs DRRIP vs SHIP
 
 ## Purpose
 
@@ -180,22 +180,57 @@ CPI = cycles / instructions
 CPI = 83345686 / 100000000
 CPI ≈ 0.833
 ```
+## SHIP Results
+
+### SHIP Dead Block Results
+
+| Structure | Dead Blocks | Valid Evictions | Dead Block % |
+|---|---:|---:|---:|
+| STLB | 0 | 0 | - |
+| L2C | 395,388 | 701,733 | 56.34 |
+| L1I | 0 | 0 | - |
+| L1D | 568,582 | 1,008,203 | 56.40 |
+| ITLB | 0 | 0 | - |
+| DTLB | 505,309 | 665,847 | 75.89 |
+| LLC | 297,188 | 311,383 | 95.44 |
+
+### SHIP Performance and Miss Results
+
+| Metric | Value |
+|---|---:|
+| IPC | 1.213 |
+| Instructions | 100,000,000 |
+| Cycles | 82,422,901 |
+| CPI | 0.824 |
+| L1D Misses | 2,330,601 |
+| L2C Misses | 701,733 |
+| LLC Misses | 327,262 |
+
+CPI calculation:
+
+```text
+CPI = cycles / instructions
+CPI = 82422901 / 100000000
+CPI ≈ 0.824
+```
 
 ## Performance Comparison
 
-| Policy |   IPC |   CPI | L1D Misses | L2C Misses | LLC Misses |
-| ------ | ----: | ----: | ---------: | ---------: | ---------: |
-| LRU    | 1.139 | 0.878 |  2,378,477 |    701,676 |    305,683 |
-| SRRIP  | 1.208 | 0.828 |  2,335,372 |    701,578 |    334,166 |
-| DRRIP  | 1.200 | 0.833 |  2,333,669 |    701,734 |    336,094 |
+| Policy | IPC | CPI | L1D Misses | L2C Misses | LLC Misses |
+|---|---:|---:|---:|---:|---:|
+| LRU | 1.139 | 0.878 | 2,378,477 | 701,676 | 305,683 |
+| SRRIP | 1.208 | 0.828 | 2,335,372 | 701,578 | 334,166 |
+| DRRIP | 1.200 | 0.833 | 2,333,669 | 701,734 | 336,094 |
+| SHIP | 1.213 | 0.824 | 2,330,601 | 701,733 | 327,262 |
 
 ## LLC Dead Block Comparison
 
-| Policy | LLC Dead Blocks | LLC Valid Evictions | LLC Dead Block % | LLC Misses |   IPC |
-| ------ | --------------: | ------------------: | ---------------: | ---------: | ----: |
-| LRU    |          85,461 |             289,804 |            29.49 |    305,683 | 1.139 |
-| SRRIP  |         305,265 |             318,287 |            95.91 |    334,166 | 1.208 |
-| DRRIP  |         305,632 |             320,215 |            95.45 |    336,094 | 1.200 |
+| Policy | LLC Dead Blocks | LLC Valid Evictions | LLC Dead Block % | LLC Misses | IPC |
+|---|---:|---:|---:|---:|---:|
+| LRU | 85,461 | 289,804 | 29.49 | 305,683 | 1.139 |
+| SRRIP | 305,265 | 318,287 | 95.91 | 334,166 | 1.208 |
+| DRRIP | 305,632 | 320,215 | 95.45 | 336,094 | 1.200 |
+| SHIP | 297,188 | 311,383 | 95.44 | 327,262 | 1.213 |
 
 ## Main Observation
 
@@ -250,10 +285,10 @@ This shows that LLC miss count alone is not enough to judge the policy. IPC depe
 For the CRC-2 `bzip2_259B` trace with 10M warmup and 100M simulation instructions:
 
 ```text
-SRRIP gave the best overall result.
-DRRIP was also better than LRU.
-Both SRRIP and DRRIP selected dead LLC victims much more effectively than LRU.
-```
+SHIP gave the best overall result.
+SRRIP was the second-best by IPC.
+DRRIP also improved over LRU.
+SRRIP, DRRIP, and SHIP all selected dead LLC victims much more effectively than LRU.
 
 This is the strongest final result so far because it shows RRIP-style policies improving both dead-block victim selection and overall performance.
-
+```
