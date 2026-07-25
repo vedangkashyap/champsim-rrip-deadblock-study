@@ -12,8 +12,17 @@ cache_stats operator-(cache_stats lhs, cache_stats rhs)
 
   result.hits = lhs.hits - rhs.hits;
 
-  result.dead_block_count = lhs.dead_block_count - rhs.dead_block_count;
-  result.total_valid_evictions = lhs.total_valid_evictions - rhs.total_valid_evictions;
+  // ---------------------------------------------------------------
+  // Name: VEDANGK
+  // Reason: Subtraction updated for the renamed *_global fields and
+  // the two new *_percpu event_counters, so warmup-vs-ROI phase
+  // subtraction keeps working correctly for the new per-core stats.
+  // ---------------------------------------------------------------
+  result.dead_block_count_global = lhs.dead_block_count_global - rhs.dead_block_count_global;
+  result.total_valid_evictions_global = lhs.total_valid_evictions_global - rhs.total_valid_evictions_global;
+  result.dead_block_count_percpu = lhs.dead_block_count_percpu - rhs.dead_block_count_percpu;
+  result.total_valid_evictions_percpu = lhs.total_valid_evictions_percpu - rhs.total_valid_evictions_percpu;
+  // ---------------------------------------------------------------
 
   result.misses = lhs.misses - rhs.misses;
 

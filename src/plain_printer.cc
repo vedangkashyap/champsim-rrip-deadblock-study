@@ -118,14 +118,36 @@ std::vector<std::string> champsim::plain_printer::format(CACHE::stats_type stats
 
     lines.push_back(fmt::format("cpu{}->{} PREFETCH REQUESTED: {:10} ISSUED: {:10} USEFUL: {:10} USELESS: {:10}", cpu, stats.name, stats.pf_requested,
                                 stats.pf_issued, stats.pf_useful, stats.pf_useless));
-    lines.push_back(fmt::format("cpu{}->{} DEAD BLOCKS: {:10} VALID EVICTIONS: {:10} DEAD BLOCK %: {}",
-                            cpu, stats.name, stats.dead_block_count, stats.total_valid_evictions,
-                            ::print_ratio(100.0 * stats.dead_block_count, stats.total_valid_evictions)));
+    // ---------------------------------------------------------------
+    // Name: VEDANGK
+    // Reason: Print per-core dead block stats using the new *_percpu
+    // event_counters (was previously one blended number for all
+    // cores, even for a shared structure like the LLC).
+    // ---------------------------------------------------------------
+    lines.push_back(fmt::format("cpu{}->{} DEAD BLOCKS (CORE): {:10} VALID EVICTIONS (CORE): {:10} DEAD BLOCK % (CORE): {}",
+                            cpu, stats.name,
+                            stats.dead_block_count_percpu.value_or(cpu, 0L),
+                            stats.total_valid_evictions_percpu.value_or(cpu, 0L),
+                            ::print_ratio(100.0 * stats.dead_block_count_percpu.value_or(cpu, 0L),
+                                          stats.total_valid_evictions_percpu.value_or(cpu, 0L))));
+    // ---------------------------------------------------------------
 
     uint64_t total_downstream_demands = total_mshr_return - stats.mshr_return.value_or(std::pair{access_type::PREFETCH, cpu}, mshr_return_value_type{});
     lines.push_back(
         fmt::format("cpu{}->{} AVERAGE MISS LATENCY: {} cycles", cpu, stats.name, ::print_ratio(stats.total_miss_latency_cycles, total_downstream_demands)));
   }
+
+  // ---------------------------------------------------------------
+  // Name: VEDANGK
+  // Reason: Print the cache-wide (all-cores-blended) dead block stat
+  // once per structure, clearly labeled GLOBAL, separate from the
+  // per-core lines above. Renamed from the old unlabeled "DEAD
+  // BLOCKS" line for clarity now that a per-core version also exists.
+  // ---------------------------------------------------------------
+  lines.push_back(fmt::format("{} DEADBLOCK GLOBAL: {:10} VALID EVICTIONS GLOBAL: {:10} DEAD BLOCK % GLOBAL: {}",
+                          stats.name, stats.dead_block_count_global, stats.total_valid_evictions_global,
+                          ::print_ratio(100.0 * stats.dead_block_count_global, stats.total_valid_evictions_global)));
+  // ---------------------------------------------------------------
 
   return lines;
 }

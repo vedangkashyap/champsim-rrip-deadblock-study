@@ -26,6 +26,17 @@ struct cache_block {
   bool prefetch = false;
   bool dirty = false;
   bool used_after_fill = false;
+
+  // ---------------------------------------------------------------
+  // Name: VEDANGK
+  // Reason: Added owner_cpu to attribute a block to the core that
+  // installed it. Needed so that a shared structure (e.g. the LLC)
+  // can tell, at eviction time, which core's per-core dead-block
+  // counter should be incremented.
+  // ---------------------------------------------------------------
+  uint32_t owner_cpu = 0;
+  // ---------------------------------------------------------------
+
   champsim::address address{};
   champsim::address v_address{};
   champsim::address data{};

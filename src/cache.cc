@@ -149,6 +149,14 @@ auto CACHE::fill_block(mshr_type mshr, uint32_t metadata) -> BLOCK
   to_fill.data = mshr.data_promise->data;
   to_fill.pf_metadata = metadata;
   to_fill.used_after_fill = false;
+  // ---------------------------------------------------------------
+  // Name: VEDANGK
+  // Reason: Record which core is installing this block, so that a
+  // later eviction (possibly from a shared structure like the LLC)
+  // can be attributed to the correct core's dead-block counter.
+  // ---------------------------------------------------------------
+  to_fill.owner_cpu = mshr.cpu;
+  // ---------------------------------------------------------------
   
   return to_fill;
 }
@@ -225,11 +233,21 @@ bool CACHE::handle_fill(const mshr_type& fill_mshr)
 
   if (way != set_end) {
   if (way->valid) {
-    ++sim_stats.total_valid_evictions;
+    // ---------------------------------------------------------------
+    // Name: VEDANGK
+    // Reason: Count this eviction both globally (cache-wide, as
+    // before) and against the core that owned the evicted block
+    // (way->owner_cpu), so shared structures like the LLC can report
+    // a per-core dead-block percentage, not just one blended number.
+    // ---------------------------------------------------------------
+    ++sim_stats.total_valid_evictions_global;
+    sim_stats.total_valid_evictions_percpu.increment(way->owner_cpu);
 
     if (!way->used_after_fill) {
-      ++sim_stats.dead_block_count;
+      ++sim_stats.dead_block_count_global;
+      sim_stats.dead_block_count_percpu.increment(way->owner_cpu);
     }
+    // ---------------------------------------------------------------
   }
 
   if (way->valid && way->prefetch) {
@@ -888,8 +906,17 @@ void CACHE::end_phase(unsigned finished_cpu)
   roi_stats.pf_useful = sim_stats.pf_useful;
   roi_stats.pf_useless = sim_stats.pf_useless;
   roi_stats.pf_fill = sim_stats.pf_fill;
-  roi_stats.dead_block_count = sim_stats.dead_block_count;
-  roi_stats.total_valid_evictions = sim_stats.total_valid_evictions;
+  // ---------------------------------------------------------------
+  // Name: VEDANGK
+  // Reason: Copy the renamed global fields and the two new per-cpu
+  // event_counters into roi_stats, matching the pattern already used
+  // for every other stat here.
+  // ---------------------------------------------------------------
+  roi_stats.dead_block_count_global = sim_stats.dead_block_count_global;
+  roi_stats.total_valid_evictions_global = sim_stats.total_valid_evictions_global;
+  roi_stats.dead_block_count_percpu = sim_stats.dead_block_count_percpu;
+  roi_stats.total_valid_evictions_percpu = sim_stats.total_valid_evictions_percpu;
+  // ---------------------------------------------------------------
 
   for (auto* ul : upper_levels) {
     ul->roi_stats.RQ_ACCESS = ul->sim_stats.RQ_ACCESS;
